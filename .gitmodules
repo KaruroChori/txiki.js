@@ -13,7 +13,7 @@
 [submodule "deps/quickjs"]
 	path = deps/quickjs
 	url = https://github.com/KaruroChori/quickjs.git
-	branch = gc-callbacks
+	branch = stable-gluegunfw
 [submodule "deps/mimalloc"]
 	path = deps/mimalloc
 	url = https://github.com/microsoft/mimalloc
