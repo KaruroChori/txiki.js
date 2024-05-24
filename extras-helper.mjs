@@ -1,7 +1,7 @@
 #!/bin/env node
 import { existsSync, write } from 'node:fs'
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises'
-import { dirname} from 'node:path'
+import { dirname } from 'node:path'
 
 import { program } from 'commander';
 import { randomUUID } from 'node:crypto';
@@ -24,6 +24,26 @@ async function copy_template(path, subdir) {
     }
 }
 
+async function retrieve(name, path) {
+    //From the internet
+    if (path.startsWith('https://') || path.startsWith('http://')) {
+        await writeFile(
+            `./extras/${name}.tar.gz`,
+            Readable.fromWeb(
+                (await fetch(path)).body,
+            ),
+        )
+        await exec(`mkdir ./extras/${module[0]} &&  tar -xvzf ./extras/${name}.tar.gz -C ./extras/${name} --strip-components=1`);
+        await rm(`./extras/${name}.tar.gz`)
+    }
+    //Local folder
+    else {
+        //TODO: Copy from local fs
+        await cp(path, `./extras/${name}`, { recursive: true, dereference: true, errorOnExist: false })
+    }
+    await install(module[0])
+}
+
 async function install(path) {
     await mkdir(`src/extras/${path}`, { errorOnExist: false });
 
@@ -34,9 +54,9 @@ async function install(path) {
         for (const file of files) {
             const name = file.substring(prefix).replaceAll("[module]", path)
             const fullPath = `./src/extras/${path}/${name}`
-            await mkdir(dirname(fullPath), { errorOnExist: false, recursive:true });
+            await mkdir(dirname(fullPath), { errorOnExist: false, recursive: true });
             await writeFile(fullPath, ((await readFile(file)).toString().replaceAll('__MODULE__', path)))
-    
+
         }
     }
 
@@ -59,10 +79,10 @@ async function clear() {
     await rm('benchmark/extras/', { recursive: true, force: true });
     await rm('docs/types/extras/', { recursive: true, force: true });
 
-    await rm('./src/extras-bootstrap.c.frag', {force:true})
-    await rm('./src/extras-headers.c.frag', {force:true})
-    await rm('./src/extras-bundles.c.frag', {force:true})
-    await rm('./src/extras-entries.c.frag', {force:true})
+    await rm('./src/extras-bootstrap.c.frag', { force: true })
+    await rm('./src/extras-headers.c.frag', { force: true })
+    await rm('./src/extras-bundles.c.frag', { force: true })
+    await rm('./src/extras-entries.c.frag', { force: true })
 }
 
 program
@@ -73,6 +93,23 @@ program.command('clear')
     .description('Clear after your previous configuration')
     .action(async () => {
         await clear()
+    })
+
+program.command('refresh')
+    .description('Refresh a single module, keeping the rest the same')
+    .argument("<module>", 'module name ')
+    .argument("[filename]", 'filename for the configuration', './modules.json')
+    .action(async (modname, filename) => {
+        let config = undefined
+        try {
+            config = JSON.parse(await readFile(filename))
+        }
+        catch (e) {
+            console.error("Unable to parse the config file.")
+            process.exit(1)
+        }
+
+        await retrieve(modname, config[modname])
     })
 
 program.command('clone')
@@ -101,23 +138,7 @@ program.command('clone')
         }
 
         for (const module of Object.entries(config)) {
-            //From the internet
-            if (module[1].startsWith('https://') || module[1].startsWith('http://')) {
-                await writeFile(
-                    `./extras/${module[0]}.tar.gz`,
-                    Readable.fromWeb(
-                        (await fetch(module[1])).body,
-                    ),
-                )
-                await exec(`mkdir ./extras/${module[0]} &&  tar -xvzf ./extras/${module[0]}.tar.gz -C ./extras/${module[0]} --strip-components=1`);
-                await rm(`./extras/${module[0]}.tar.gz`)
-            }
-            //Local folder
-            else {
-                //TODO: Copy from local fs
-                await cp(module[1], `./extras/${module[0]}`, { recursive: true, dereference: true, errorOnExist: false })
-            }
-            await install(module[0])
+            await retrieve(module[0], module[1])
         }
 
         //Placeholder for now
