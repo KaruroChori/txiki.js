@@ -1,10 +1,32 @@
 #!/bin/env node
-import { existsSync, write } from 'node:fs'
+/**
+The MIT License (MIT)
+
+Copyright (c) 2024-present karurochari <public@karurochari.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
 import { program } from 'commander';
-import { randomUUID } from 'node:crypto';
 import { exec as _exec } from 'node:child_process';
 import { Readable } from 'node:stream'
 import util from 'node:util';
@@ -41,7 +63,7 @@ async function retrieve(name, path) {
         //TODO: Copy from local fs
         await cp(path, `./extras/${name}`, { recursive: true, dereference: true, errorOnExist: false })
     }
-    await install(module[0])
+    await install(name)
 }
 
 async function install(path) {
@@ -63,7 +85,6 @@ async function install(path) {
     //While js/ts files must be already reduced in a bundle by this point.
     await writeFile(`./src/js/extras/${path}.js`, ((await readFile(`./extras/${path}/bundle/[module].js`)).toString().replaceAll('__MODULE__', path)))
     await writeFile(`./docs/types/extras/${path}.d.ts`, ((await readFile(`./extras/${path}/bundle/[module].d.ts`)).toString().replaceAll('__MODULE__', path)))
-
     await copy_template(path, 'examples')
     await copy_template(path, 'benchmarks')
     await copy_template(path, 'tests')
