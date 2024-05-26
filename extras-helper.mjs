@@ -55,7 +55,7 @@ async function retrieve(name, path) {
                 (await fetch(path)).body,
             ),
         )
-        await exec(`mkdir ./extras/${module[0]} &&  tar -xvzf ./extras/${name}.tar.gz -C ./extras/${name} --strip-components=1`);
+        await exec(`mkdir ./extras/${name} &&  tar -xvzf ./extras/${name}.tar.gz -C ./extras/${name} --strip-components=1`);
         await rm(`./extras/${name}.tar.gz`)
     }
     //Local folder
