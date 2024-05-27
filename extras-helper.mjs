@@ -79,7 +79,7 @@ function check_versions(strict, name, modprotocol_version, runtime_version) {
 }
 
 /**
- * 
+ * Recover a native dependency from a git server.
  * @param {string} name Name of the submodule
  * @param {string} url Source
  * @param {string} branch Branch/Tag
@@ -114,7 +114,7 @@ async function retrieve(name, path) {
     else {
         await cp(path, `./extras/${name}`, { recursive: true, dereference: true, errorOnExist: false })
     }
-    await install(name)
+    return await install(name)
 }
 
 async function install(path) {
@@ -125,9 +125,18 @@ async function install(path) {
         process.exit(1)
     }
 
+    const cmake = []
+
     for (const [name, info] of Object.entries(modcfg["native-deps"] ?? {})) {
         console.log(`Shallow cloning ${name} @ ${info.repo} branch ${info.branch}`)
         await clone_shallow(name, info.repo, info.branch)
+
+        for (const item of Object.entries(info.env ?? {})) {
+            //TODO: Evaluate if we want to have escaping, or a better handling of types.
+            const { value, type, force } = item[1]
+            cmake.push(`set(${item[0]} ${value} CACHE ${type} "Handle ${name} ${item[0]} variable" ${force ? 'FORCE' : ''})`)
+        }
+        cmake.push(`add_subdirectory(./${name} EXCLUDE_FROM_ALL)`)
     }
 
     await mkdir(`src/extras/${path}`, { errorOnExist: false });
@@ -151,6 +160,9 @@ async function install(path) {
     await copy_template(path, 'examples')
     await copy_template(path, 'benchmarks')
     await copy_template(path, 'tests')
+
+
+    return { cmake: cmake }
 }
 
 async function clear() {
@@ -168,7 +180,6 @@ async function clear() {
     await rm('./src/extras-bundles.c.frag', { force: true })
     await rm('./src/extras-entries.c.frag', { force: true })
 }
-
 
 program
     .name('extras-helper.mjs')
@@ -226,12 +237,15 @@ program.command('clone')
             process.exit(1)
         }
 
+        const cmake = []
+
         for (const module of Object.entries(config)) {
-            await retrieve(module[0], module[1])
+            const moduleInfo = (await retrieve(module[0], module[1]))
+            cmake.push(moduleInfo.cmake.join('\n'))
         }
 
         //Placeholder for now
-        await writeFile('deps/extras/CMakeLists.txt', '')
+        await writeFile('deps/extras/CMakeLists.txt', cmake.join("\n"))
         await writeFile('./modules.json', JSON.stringify(config, null, 4))
 
         //Construct src/extras.bootstrap to initialize the extra modules
