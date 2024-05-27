@@ -84,7 +84,9 @@ function check_versions(strict, name, modprotocol_version, runtime_version) {
  * @param {string} url Source
  * @param {string} branch Branch/Tag
  */
-async function clone_shallow(name, url, branch) { }
+async function clone_shallow(name, url, branch) {
+    await exec(`git clone --recurse-submodules --shallow-submodules --depth 1 --single-branch --branch ${branch} ${url} ./deps/extras/${name}`);
+}
 
 async function copy_template(path, subdir) {
     const files = await fg(`./extras/${path}/${subdir}/*.js`);
@@ -121,6 +123,11 @@ async function install(path) {
     if (!check_versions(STRICT, path, modcfg["module-version"], modcfg["runtime-version"])) {
         console.error(`Unable to properly handle module ${path}`)
         process.exit(1)
+    }
+
+    for (const [name, info] of Object.entries(modcfg["native-deps"] ?? {})) {
+        console.log(`Shallow cloning ${name} @ ${info.repo} branch ${info.branch}`)
+        await clone_shallow(name, info.repo, info.branch)
     }
 
     await mkdir(`src/extras/${path}`, { errorOnExist: false });
