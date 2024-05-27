@@ -23,17 +23,65 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+const protocol_version = [2, 1, 0]
+const runtime_version = [0, 4, 2]   //TODO: take this from somewhere else.
+
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import util from 'node:util';
 
 import { program } from 'commander';
 import { exec as _exec } from 'node:child_process';
-import { Readable } from 'node:stream'
-import util from 'node:util';
-
 const exec = util.promisify(_exec);
 
+import { Readable } from 'node:stream'
 import fg from 'fast-glob'
+
+/**
+ * It checks the version of the runtime & module interface against the one presented by a module
+ * @param {string} name 
+ * @param {[number,number,number]|undefined} modprotocol_version 
+ * @param {[number,number,number]|undefined} runtime_version 
+ * @param {boolean} strict 
+ * @returns {boolean} True if versions are matching
+ */
+function check_versions(strict, name, modprotocol_version, runtime_version) {
+    if (strict) {
+        if (modprotocol_version === undefined) {
+            console.error(
+                `Module <tjs:${name}> is not versioned against the module protocol.`,
+            );
+            process.exit(1);
+        }
+        if (runtime_version === undefined) {
+            console.error(
+                `Module <tjs:${name}> is not versioned against the runtime.`,
+            );
+            process.exit(1);
+        }
+    }
+    else {
+        if (modprotocol_version === undefined)
+            console.warning(
+                `Module <tjs:${name}> has no protocol version reported. It might end up being incompatible`,
+            );
+        if (runtime_version === undefined)
+            console.warning(
+                `Module <tjs:${name}> has no runtime version reported. It might end up being incompatible`,
+            );
+    }
+
+    //TODO: Logic to determine if they are compatible here.
+    return true;
+}
+
+/**
+ * 
+ * @param {string} name Name of the submodule
+ * @param {string} url Source
+ * @param {string} branch Branch/Tag
+ */
+async function clone_shallow(name, url, branch) { }
 
 async function copy_template(path, subdir) {
     const files = await fg(`./extras/${path}/${subdir}/*.js`);
@@ -60,7 +108,6 @@ async function retrieve(name, path) {
     }
     //Local folder
     else {
-        //TODO: Copy from local fs
         await cp(path, `./extras/${name}`, { recursive: true, dereference: true, errorOnExist: false })
     }
     await install(name)
