@@ -49,7 +49,7 @@ import fg from 'fast-glob'
  * @returns {boolean} True if versions are matching
  */
 function check_versions(strict, name, modprotocol_version, runtime_version) {
-    if (strict) {
+    if (strict === true) {
         if (modprotocol_version === undefined) {
             console.error(
                 `Module <tjs:${name}> is not versioned against the module protocol.`,
@@ -162,9 +162,10 @@ async function clear() {
     await rm('./src/extras-entries.c.frag', { force: true })
 }
 
+
 program
     .name('extras-helper.mjs')
-    .description('A CLI to customize your txiki distribution');
+    .description('A CLI to customize your txiki distribution')
 
 program.command('clear')
     .description('Clear after your previous configuration')
@@ -176,7 +177,9 @@ program.command('refresh')
     .description('Refresh a single module, keeping the rest the same')
     .argument("<module>", 'module name ')
     .argument("[filename]", 'filename for the configuration', './modules.json')
-    .action(async (modname, filename) => {
+    .option("-s, --strict", "Force checks for versions")
+    .action(async (modname, filename, options) => {
+        STRICT = options.strict
         let config = undefined
         try {
             config = JSON.parse(await readFile(filename))
@@ -192,7 +195,9 @@ program.command('refresh')
 program.command('clone')
     .description('Clear after your previous configuration')
     .argument("[filename]", 'filename for the configuration', './modules.json')
-    .action(async (filename) => {
+    .option("-s, --strict", "Force checks for versions")
+    .action(async (filename, options) => {
+        STRICT = options.strict
         //For now, since I am too lazy to handle merging
         await clear()
 
