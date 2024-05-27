@@ -23,10 +23,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+let STRICT = false;
 const protocol_version = [2, 1, 0]
 const runtime_version = [0, 4, 2]   //TODO: take this from somewhere else.
 
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises'
+import { existsSync } from 'node:fs';
+
 import { dirname } from 'node:path'
 import util from 'node:util';
 
@@ -51,22 +54,22 @@ function check_versions(strict, name, modprotocol_version, runtime_version) {
             console.error(
                 `Module <tjs:${name}> is not versioned against the module protocol.`,
             );
-            process.exit(1);
+            return false;
         }
         if (runtime_version === undefined) {
             console.error(
                 `Module <tjs:${name}> is not versioned against the runtime.`,
             );
-            process.exit(1);
+            return false;
         }
     }
     else {
         if (modprotocol_version === undefined)
-            console.warning(
+            console.warn(
                 `Module <tjs:${name}> has no protocol version reported. It might end up being incompatible`,
             );
         if (runtime_version === undefined)
-            console.warning(
+            console.warn(
                 `Module <tjs:${name}> has no runtime version reported. It might end up being incompatible`,
             );
     }
@@ -90,7 +93,6 @@ async function copy_template(path, subdir) {
     for (const file of files) {
         const name = file.substring(prefix, file.length - suffix).replaceAll("[module]", path)
         await writeFile(`./${subdir}/extras/${name}.js`, ((await readFile(file)).toString().replaceAll('__MODULE__', path)))
-
     }
 }
 
@@ -114,6 +116,13 @@ async function retrieve(name, path) {
 }
 
 async function install(path) {
+    let modcfg = {}
+    if (await existsSync(`./extras/${path}/module.json`)) modcfg = JSON.parse((await readFile(`./extras/${path}/module.json`)).toString())
+    if (!check_versions(STRICT, path, modcfg["module-version"], modcfg["runtime-version"])) {
+        console.error(`Unable to properly handle module ${path}`)
+        process.exit(1)
+    }
+
     await mkdir(`src/extras/${path}`, { errorOnExist: false });
 
     //Copy over all files in src
