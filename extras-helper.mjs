@@ -25,7 +25,8 @@ SOFTWARE.
 
 let STRICT = false;
 const protocol_version = [2, 1, 0]
-const runtime_version = [0, 4, 2]   //TODO: take this from somewhere else.
+//TODO: take this from the makefile? There must be a better way to handle this.
+const runtime_version = [23, 12, 0]
 
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises'
 import { existsSync } from 'node:fs';
@@ -74,7 +75,7 @@ function check_versions(strict, name, modprotocol_version, runtime_version) {
             );
     }
 
-    //TODO: Logic to determine if they are compatible here.
+    //TODO: Add any logic to be determined to ensure compatibility here.
     return true;
 }
 
@@ -126,17 +127,24 @@ async function install(path) {
     }
 
     const cmake = []
+    const names = []
 
     for (const [name, info] of Object.entries(modcfg["native-deps"] ?? {})) {
         console.log(`Shallow cloning ${name} @ ${info.repo} branch ${info.branch}`)
         await clone_shallow(name, info.repo, info.branch)
 
+        cmake.push("block()")
+
+        //Build the extras cmake entries
         for (const item of Object.entries(info.env ?? {})) {
             //TODO: Evaluate if we want to have escaping, or a better handling of types.
+            //In general all this part is likely to be reworked and extended at some point.
             const { value, type, force } = item[1]
             cmake.push(`set(${item[0]} ${value} CACHE ${type} "Handle ${name} ${item[0]} variable" ${force ? 'FORCE' : ''})`)
         }
         cmake.push(`add_subdirectory(./${name} EXCLUDE_FROM_ALL)`)
+        cmake.push("endblock()")
+        names.push(name)
     }
 
     await mkdir(`src/extras/${path}`, { errorOnExist: false });
@@ -162,7 +170,7 @@ async function install(path) {
     await copy_template(path, 'tests')
 
 
-    return { cmake: cmake }
+    return { cmake: cmake, names: names }
 }
 
 async function clear() {
@@ -238,14 +246,16 @@ program.command('clone')
         }
 
         const cmake = []
+        const names = []
 
         for (const module of Object.entries(config)) {
             const moduleInfo = (await retrieve(module[0], module[1]))
             cmake.push(moduleInfo.cmake.join('\n'))
+            names.push(...moduleInfo.names)
         }
 
         //Placeholder for now
-        await writeFile('deps/extras/CMakeLists.txt', cmake.join("\n"))
+        await writeFile('deps/extras/CMakeLists.txt', `${cmake.join("\n")}\nset(EXTRA_MODULES ${names.join(' ')})`)
         await writeFile('./modules.json', JSON.stringify(config, null, 4))
 
         //Construct src/extras.bootstrap to initialize the extra modules
