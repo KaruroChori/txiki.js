@@ -142,9 +142,10 @@ async function install(path) {
             const { value, type, force } = item[1]
             cmake.push(`set(${item[0]} ${value} CACHE ${type} "Handle ${name} ${item[0]} variable" ${force ? 'FORCE' : ''})`)
         }
+        if (info['raw-cmake']) cmake.push(info['raw-cmake'])
         cmake.push(`add_subdirectory(./${name} EXCLUDE_FROM_ALL)`)
         cmake.push("endblock()")
-        names.push(name)
+        names.push(...(info.symbols ?? [name]))
     }
 
     await mkdir(`src/extras/${path}`, { errorOnExist: false });
