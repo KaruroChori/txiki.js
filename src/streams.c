@@ -534,8 +534,10 @@ static JSValue tjs_tcp_connect(JSContext *ctx, JSValue this_val, int argc, JSVal
     cr->req.data = cr;
 
     r = uv_tcp_connect(&cr->req, &t->h.tcp, (struct sockaddr *) &ss, uv__stream_connect_cb);
-    if (r != 0)
+    if (r != 0) {
+        js_free(ctx, cr);
         return tjs_throw_errno(ctx, r);
+    }
 
     return TJS_InitPromise(ctx, &cr->result);
 }
@@ -790,7 +792,8 @@ static JSValue tjs_pipe_connect(JSContext *ctx, JSValue this_val, int argc, JSVa
     if (!JS_IsString(argv[0]))
         return JS_ThrowTypeError(ctx, "the pipe name must be a string");
 
-    const char *name = JS_ToCString(ctx, argv[0]);
+    size_t len;
+    const char *name = JS_ToCStringLen(ctx, &len, argv[0]);
     if (!name)
         return JS_EXCEPTION;
 
@@ -801,9 +804,12 @@ static JSValue tjs_pipe_connect(JSContext *ctx, JSValue this_val, int argc, JSVa
     }
     cr->req.data = cr;
 
-    uv_pipe_connect(&cr->req, &t->h.pipe, name, uv__stream_connect_cb);
-
+    int r = uv_pipe_connect2(&cr->req, &t->h.pipe, name, len, 0, uv__stream_connect_cb);
     JS_FreeCString(ctx, name);
+    if (r != 0) {
+        js_free(ctx, cr);
+        return tjs_throw_errno(ctx, r);
+    }
 
     return TJS_InitPromise(ctx, &cr->result);
 }
@@ -816,11 +822,12 @@ static JSValue tjs_pipe_bind(JSContext *ctx, JSValue this_val, int argc, JSValue
     if (!JS_IsString(argv[0]))
         return JS_ThrowTypeError(ctx, "the pipe name must be a string");
 
-    const char *name = JS_ToCString(ctx, argv[0]);
+    size_t len;
+    const char *name = JS_ToCStringLen(ctx, &len, argv[0]);
     if (!name)
         return JS_EXCEPTION;
 
-    int r = uv_pipe_bind(&t->h.pipe, name);
+    int r = uv_pipe_bind2(&t->h.pipe, name, len, 0);
     JS_FreeCString(ctx, name);
     if (r != 0)
         return tjs_throw_errno(ctx, r);
