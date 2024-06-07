@@ -210,7 +210,7 @@ Object.defineProperty(tjs, 'gc', {
     enumerable: true,
     configurable: false,
     writable: false,
-    value: {
+    value: Object.freeze({
         run: ()=>core._gc.run(),
 
         set enabled(value) {
@@ -262,7 +262,7 @@ Object.defineProperty(tjs, 'gc', {
             core._gc.setAfterCallback(v);
         }
 
-    }
+    })
 });
 
 // Internal stuff needed by the runtime.
