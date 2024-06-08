@@ -268,7 +268,7 @@ program.command('clone')
         }
 
         //Placeholder for now
-        await writeFile('deps/extras/CMakeLists.txt', `${cmake.join("\n")}\nset(EXTRA_MODULES ${names.join(' ')})`)
+        await writeFile('deps/extras/CMakeLists.txt', `${cmake.join("\n")}\nset(EXTRA_MODULES "${names.join(' ')}" CACHE STRING "" FORCE)`)
         await writeFile('./modules.json', JSON.stringify(config, null, 4))
 
         //Construct src/extras.bootstrap to initialize the extra modules
