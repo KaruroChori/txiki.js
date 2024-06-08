@@ -261,7 +261,8 @@ program.command('clone')
         const names = []
 
         for (const module of Object.entries(config)) {
-            const moduleInfo = (await retrieve(module[0], module[1], './extras/') && await install(module[0]))
+            await retrieve(module[0], module[1], './extras/')
+            const moduleInfo = (await install(module[0]))
             cmake.push(moduleInfo.cmake.join('\n'))
             names.push(...moduleInfo.names)
         }
