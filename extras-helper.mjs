@@ -104,7 +104,7 @@ async function retrieve(name, path, prefix) {
     //From the internet
     if (path.startsWith('https://') || path.startsWith('http://')) {
         await writeFile(
-            `./extras/${name}.tar.gz`,
+            `${prefix}${name}.tar.gz`,
             Readable.fromWeb(
                 (await fetch(path)).body,
             ),
