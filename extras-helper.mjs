@@ -24,7 +24,7 @@ SOFTWARE.
 */
 
 let STRICT = false;
-const protocol_version = [2, 1, 0]
+const protocol_version = [2, 2, 0]
 //TODO: take this from the makefile? There must be a better way to handle this.
 const runtime_version = [23, 12, 0]
 
@@ -100,7 +100,7 @@ async function copy_template(path, subdir) {
     }
 }
 
-async function retrieve(name, path) {
+async function retrieve(name, path, prefix = `./extras/`) {
     //From the internet
     if (path.startsWith('https://') || path.startsWith('http://')) {
         await writeFile(
@@ -109,12 +109,12 @@ async function retrieve(name, path) {
                 (await fetch(path)).body,
             ),
         )
-        await exec(`mkdir ./extras/${name} &&  tar -xvzf ./extras/${name}.tar.gz -C ./extras/${name} --strip-components=1`);
-        await rm(`./extras/${name}.tar.gz`)
+        await exec(`mkdir ${prefix}${name} &&  tar -xvzf ${prefix}${name}.tar.gz -C ${prefix}${name} --strip-components=1`);
+        await rm(`${prefix}${name}.tar.gz`)
     }
     //Local folder
     else {
-        await cp(path, `./extras/${name}`, { recursive: true, dereference: true, errorOnExist: false })
+        await cp(path, `${extras}${name}`, { recursive: true, dereference: true, errorOnExist: false })
     }
     return await install(name)
 }
@@ -131,9 +131,18 @@ async function install(path) {
     const names = []
 
     for (const [name, info] of Object.entries(modcfg["native-deps"] ?? {})) {
-        console.log(`Shallow cloning ${name} @ ${info.repo} branch ${info.branch}`)
-        await clone_shallow(name, info.repo, info.branch)
-
+        if (info.url) {
+            console.log(
+                `Fetch of ${name} @ ${info.url}`,
+            );
+            await retrieve(name, path, './deps/extras/')
+        }
+        else {
+            console.log(
+                `Shallow cloning ${name} @ ${info.repo} branch ${info.branch}`,
+            );
+            await clone_shallow(name, info.repo, info.branch);
+        }
         cmake.push("block()")
 
         //Build the extras cmake entries
