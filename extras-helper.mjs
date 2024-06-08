@@ -135,7 +135,7 @@ async function install(path) {
             console.log(
                 `Fetch of ${name} @ ${info.url}`,
             );
-            await retrieve(name, path, './deps/extras/')
+            await retrieve(name, info.url, './deps/extras/')
         }
         else {
             console.log(
