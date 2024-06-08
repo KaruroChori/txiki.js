@@ -100,6 +100,7 @@ async function copy_template(path, subdir) {
     }
 }
 
+
 async function retrieve(name, path, prefix) {
     //From the internet
     if (path.startsWith('https://') || path.startsWith('http://')) {
@@ -116,7 +117,6 @@ async function retrieve(name, path, prefix) {
     else {
         await cp(path, `${prefix}${name}`, { recursive: true, dereference: true, errorOnExist: false })
     }
-    return await install(name)
 }
 
 async function install(path) {
@@ -227,6 +227,7 @@ program.command('refresh')
         }
 
         await retrieve(modname, config[modname], './extras/')
+        await install(modname)
     })
 
 program.command('clone')
@@ -260,7 +261,7 @@ program.command('clone')
         const names = []
 
         for (const module of Object.entries(config)) {
-            const moduleInfo = (await retrieve(module[0], module[1], './extras/'))
+            const moduleInfo = (await retrieve(module[0], module[1], './extras/') && await install(module[0]))
             cmake.push(moduleInfo.cmake.join('\n'))
             names.push(...moduleInfo.names)
         }
