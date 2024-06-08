@@ -100,7 +100,7 @@ async function copy_template(path, subdir) {
     }
 }
 
-async function retrieve(name, path, prefix = `./extras/`) {
+async function retrieve(name, path, prefix) {
     //From the internet
     if (path.startsWith('https://') || path.startsWith('http://')) {
         await writeFile(
@@ -114,7 +114,7 @@ async function retrieve(name, path, prefix = `./extras/`) {
     }
     //Local folder
     else {
-        await cp(path, `${extras}${name}`, { recursive: true, dereference: true, errorOnExist: false })
+        await cp(path, `${prefix}${name}`, { recursive: true, dereference: true, errorOnExist: false })
     }
     return await install(name)
 }
@@ -226,7 +226,7 @@ program.command('refresh')
             process.exit(1)
         }
 
-        await retrieve(modname, config[modname])
+        await retrieve(modname, config[modname], './extras/')
     })
 
 program.command('clone')
@@ -260,7 +260,7 @@ program.command('clone')
         const names = []
 
         for (const module of Object.entries(config)) {
-            const moduleInfo = (await retrieve(module[0], module[1]))
+            const moduleInfo = (await retrieve(module[0], module[1], './extras/'))
             cmake.push(moduleInfo.cmake.join('\n'))
             names.push(...moduleInfo.names)
         }
