@@ -105,18 +105,28 @@ declare global {
         function kill(pid: number, sig?: Signal): void;
 
         /**
-        * Triggers a garbage collection cycle.
+        * Management for the garbage collection.
         */
-        interface GarbageCollection {
+        interface gc {
+            /**
+             * Force garbage collection now.
+             */
             run: () => void;
+
+            /**
+             * Enables / disables automatic garbage collection.
+             */
             enabled: boolean;
+
+            /**
+             * Sets / gets the threshold (in bytes) for automatic garbage collection.
+             */
             threshold: number;
+
             fixThreshold: boolean;
             onBefore: () => boolean;
             onAfter: () => void;
         }
-
-        const gc: GarbageCollection;
 
         /**
         * The txiki.js version.
