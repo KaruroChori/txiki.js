@@ -198,9 +198,7 @@ if (core.posix_socket) {
     });
 }
 
-// Garbage Collection
-// This code assumes no one else in the code will try to change the configuration for the gc.
-// Changes of the threshold will not be backpropagated here.
+// Interface for the garbage collection
 const _gc_state = {
     enabled: true,
     threshold: core._gc.getThreshold()
@@ -210,15 +208,17 @@ Object.defineProperty(tjs, 'gc', {
     enumerable: true,
     configurable: false,
     writable: false,
-    value: Object.freeze({
-        run: ()=>core._gc.run(),
+    value: {
+        run: () => core._gc.run(),
 
         set enabled(value) {
-            if (value===true) {
+            if (value) {
                 core._gc.setThreshold(_gc_state.threshold);
             } else {
                 core._gc.setThreshold(-1);
             }
+
+            _gc_state.enabled=value;
         },
         get enabled() {
             return _gc_state.enabled;
@@ -226,19 +226,19 @@ Object.defineProperty(tjs, 'gc', {
 
         set threshold(value) {
             if (_gc_state.enabled) {
-                core._gc.setThreshold(value);_gc_state.threshold=value;
-            } else {
-                core._gc.setThreshold(-1);
+                core._gc.setThreshold(value);
             }
+
+            _gc_state.threshold = value;
         },
         get threshold() {
             const tmp = core._gc.getThreshold();
 
-            if (tmp!==-1) {
+            if (tmp !== -1) {
                 _gc_state.threshold = tmp;
             }
 
-            return tmp;
+            return _gc_state.threshold;
         },
 
         /**
@@ -260,9 +260,8 @@ Object.defineProperty(tjs, 'gc', {
          */
         set onAfter(v) {
             core._gc.setAfterCallback(v);
-        }
-
-    })
+        }       
+    }
 });
 
 // Internal stuff needed by the runtime.

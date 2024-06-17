@@ -39,7 +39,7 @@ typedef struct{
 static tjs_gc_cb_t tjs_gc_on_before = {JS_NULL, JS_NULL, NULL};
 static tjs_gc_cb_t tjs_gc_on_after = {JS_NULL, JS_NULL, NULL};
 
-static JSValue js_std_gcRun(JSContext *ctx, JSValue this_val, int argc, JSValue *argv) {
+static JSValue js_std_gc_run(JSContext *ctx, JSValue this_val, int argc, JSValue *argv) {
     JS_RunGC(JS_GetRuntime(ctx));
     return JS_UNDEFINED;
 }
@@ -132,7 +132,7 @@ static JSValue tjs_evalScript(JSContext *ctx, JSValue this_val, int argc, JSValu
     str = JS_ToCStringLen(ctx, &len, argv[0]);
     if (!str)
         return JS_EXCEPTION;
-    ret = JS_Eval(ctx, str, len, "<evalScript>", JS_EVAL_TYPE_GLOBAL);
+    ret = JS_Eval(ctx, str, len, "<evalScript>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_ASYNC);
     JS_FreeCString(ctx, str);
     return ret;
 }
@@ -234,7 +234,7 @@ static const JSCFunctionListEntry tjs_sys_funcs[] = {
 };
 
 static const JSCFunctionListEntry tjs_gc_funcs[] = {
-    TJS_CFUNC_DEF("run", 0, js_std_gcRun),
+    TJS_CFUNC_DEF("run", 0, js_std_gc_run),
     TJS_CFUNC_DEF("setThreshold", 1, js_std_gcSetThreshold),
     TJS_CFUNC_DEF("getThreshold", 0, js_std_gcGetThreshold),
     TJS_CFUNC_DEF("fixThreshold", 1, js_std_gcFixThreshold),
