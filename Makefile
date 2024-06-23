@@ -1,7 +1,16 @@
 BUILD_DIR=build
 BUILDTYPE?=Release
+
 JOBS?=$(shell getconf _NPROCESSORS_ONLN)
-JS_NO_STRIP?=0
+ifeq ($(JOBS),)
+JOBS := $(shell sysctl -n hw.ncpu)
+endif
+ifeq ($(JOBS),)
+JOBS := $(shell nproc)
+endif
+ifeq ($(JOBS),)
+JOBS := 4
+endif
 
 TJS=$(BUILD_DIR)/tjs
 QJSC=$(BUILD_DIR)/tjsc
@@ -11,6 +20,7 @@ ESBUILD?=npx esbuild
 ESBUILD_PARAMS_COMMON=--target=es2022 --platform=neutral --format=esm --main-fields=main,module
 ESBUILD_PARAMS_MINIFY=--minify
 QJSC_PARAMS_STIP=-ss
+JS_NO_STRIP?=0
 
 ifeq ($(JS_NO_STRIP),1)
 	ESBUILD_PARAMS_MINIFY=
@@ -68,7 +78,6 @@ src/bundles/js/core/run-main.js: src/js/run-main/*.js
 		--metafile=$@.json \
 		--outfile=$@ \
 		--external:tjs:* \
-		--log-override:direct-eval=silent \
 		$(ESBUILD_PARAMS_MINIFY) \
 		$(ESBUILD_PARAMS_COMMON)
 
@@ -81,6 +90,25 @@ src/bundles/c/core/run-main.c: $(QJSC) src/bundles/js/core/run-main.js
 		-p tjs__ \
 		src/bundles/js/core/run-main.js
 
+src/bundles/js/core/run-repl.js: src/js/run-repl/*.js
+	$(ESBUILD) src/js/run-repl/index.js \
+		--bundle \
+		--metafile=$@.json \
+		--outfile=$@ \
+		--external:tjs:* \
+		--log-override:direct-eval=silent \
+		$(ESBUILD_PARAMS_MINIFY) \
+		$(ESBUILD_PARAMS_COMMON)
+
+src/bundles/c/core/run-repl.c: $(QJSC) src/bundles/js/core/run-repl.js
+	@mkdir -p $(basename $(dir $@))
+	$(QJSC) -m \
+		$(QJSC_PARAMS_STIP) \
+		-o $@ \
+		-n "run-repl.js" \
+		-p tjs__ \
+		src/bundles/js/core/run-repl.js
+
 src/bundles/c/core/worker-bootstrap.c: $(QJSC) src/js/worker/worker-bootstrap.js
 	@mkdir -p $(basename $(dir $@))
 	$(QJSC) \
@@ -90,7 +118,7 @@ src/bundles/c/core/worker-bootstrap.c: $(QJSC) src/js/worker/worker-bootstrap.js
 		-p tjs__ \
 		src/js/worker/worker-bootstrap.js
 
-core: src/bundles/c/core/polyfills.c src/bundles/c/core/core.c src/bundles/c/core/run-main.c src/bundles/c/core/worker-bootstrap.c
+core: src/bundles/c/core/polyfills.c src/bundles/c/core/core.c src/bundles/c/core/run-main.c src/bundles/c/core/run-repl.c src/bundles/c/core/worker-bootstrap.c
 
 src/bundles/c/stdlib/%.c: $(QJSC) src/bundles/js/stdlib/%.js
 	@mkdir -p $(basename $(dir $@))

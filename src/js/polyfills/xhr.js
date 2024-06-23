@@ -129,7 +129,45 @@ class XMLHttpRequest extends EventTarget {
     }
 
     send(body) {
-        return this[kXHR].send(body);
+        let payload;
+
+        if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+            let buffer, offset, length;
+
+            if (body instanceof ArrayBuffer) {
+                buffer = body;
+                offset = length = 0;
+            } else {
+                buffer = body.buffer;
+                offset = body.byteOffset;
+                length = body.byteLength;
+            }
+
+            payload = new Uint8Array(buffer, offset, length);
+            this.setRequestHeader('Content-Type', '');
+        } else if (body instanceof Blob) {
+            payload = body;
+            this.setRequestHeader('Content-Type', body.type);
+        } else if (body instanceof URLSearchParams) {
+            payload = body.toString();
+            this.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=UTF-8');
+        } else if (body instanceof FormData) {
+            payload = body['_blob'](); // We use a polyfill.
+        } else if (body instanceof ReadableStream) {
+            // Unsupported.
+        } else {
+            payload = String(body);
+        }
+
+        if (typeof payload === 'undefined') {
+            throw new Error('Unsupported payload type');
+        } else if (payload instanceof Blob) {
+            payload.arrayBuffer().then(buffer => {
+                this[kXHR].send(new Uint8Array(buffer));
+            });
+        } else {
+            this[kXHR].send(payload);
+        }
     }
 
     setRequestHeader(name, value) {
