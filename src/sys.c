@@ -29,6 +29,9 @@
 #include <unistd.h>
 #include <uv.h>
 
+extern const uint8_t tjs__run_repl[];
+extern const uint32_t tjs__run_repl_size;
+
 
 typedef struct{
     JSValue callback;
@@ -137,6 +140,12 @@ static JSValue tjs_evalScript(JSContext *ctx, JSValue this_val, int argc, JSValu
     return ret;
 }
 
+static JSValue tjs_runRepl(JSContext *ctx, JSValue this_val, int argc, JSValue *argv) {
+    tjs__eval_bytecode(ctx, tjs__run_repl, tjs__run_repl_size);
+
+    return JS_UNDEFINED;
+}
+
 static JSValue tjs_exepath(JSContext *ctx, JSValue this_val) {
     char buf[1024];
     size_t size = sizeof(buf);
@@ -228,6 +237,7 @@ static const JSCFunctionListEntry tjs_sys_funcs[] = {
     TJS_CFUNC_DEF("evalScript", 1, tjs_evalScript),
     TJS_CFUNC_DEF("isStdinTty", 0, tjs_isStdinTty),
     TJS_CFUNC_DEF("randomUUID", 0, tjs_randomUUID),
+    TJS_CFUNC_DEF("runRepl", 0, tjs_runRepl),
     TJS_CFUNC_DEF("setMemoryLimit", 1, tjs_setMemoryLimit),
     TJS_CFUNC_DEF("setMaxStackSize", 1, tjs_setMaxStackSize),
     TJS_CGETSET_DEF("exepath", tjs_exepath, NULL),

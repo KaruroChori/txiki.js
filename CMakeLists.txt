@@ -32,8 +32,8 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
     list(APPEND tjs_cflags -ggdb -O0 -fno-omit-frame-pointer)
 endif()
 
-set(TJS__VERSION_MAJOR 23)
-set(TJS__VERSION_MINOR 12)
+set(TJS__VERSION_MAJOR 24)
+set(TJS__VERSION_MINOR 6)
 set(TJS__VERSION_PATCH 0)
 set(TJS__VERSION_SUFFIX "")
 configure_file(
@@ -115,6 +115,7 @@ add_library(tjs STATIC
     src/bundles/c/core/core.c
     src/bundles/c/core/polyfills.c
     src/bundles/c/core/run-main.c
+    src/bundles/c/core/run-repl.c
     src/bundles/c/core/worker-bootstrap.c
     ${src_extras}
     ${src_bundles_extras}

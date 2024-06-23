@@ -41,6 +41,7 @@ const noExport = [
     'posix_socket',
     'random',
     'randomUUID',
+    'runRepl',
     'setInterval',
     'setMaxStackSize',
     'setMemoryLimit',
