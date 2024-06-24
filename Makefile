@@ -15,6 +15,7 @@ endif
 TJS=$(BUILD_DIR)/tjs
 QJSC=$(BUILD_DIR)/tjsc
 STDLIB_MODULES=$(wildcard src/js/stdlib/*.js)
+EXTRAS_MODULES=$(wildcard src/js/extras/*.js)
 ESBUILD?=npx esbuild
 ESBUILD_PARAMS_COMMON=--target=es2022 --platform=neutral --format=esm --main-fields=main,module
 ESBUILD_PARAMS_MINIFY=--minify
@@ -137,18 +138,29 @@ src/bundles/js/stdlib/%.js: src/js/stdlib/*.js src/js/stdlib/ffi/*.js
 		$(ESBUILD_PARAMS_MINIFY) \
 		$(ESBUILD_PARAMS_COMMON)
 
-src/bundles/c/stdlib/%.c: $(QJSC) src/bundles/js/stdlib/%.js
+src/bundles/c/extras/%.c: $(QJSC) src/bundles/js/extras/%.js
 	@mkdir -p $(basename $(dir $@))
 	$(QJSC) -m \
 		$(QJSC_PARAMS_STIP) \
 		-o $@ \
 		-n "tjs:$(basename $(notdir $@))" \
 		-p tjs__ \
-		src/bundles/js/stdlib/$(basename $(notdir $@)).js
+		src/bundles/js/extras/$(basename $(notdir $@)).js
+
+src/bundles/js/extras/%.js: src/js/extras/*.js
+	$(ESBUILD) src/js/extras/$(notdir $@) \
+		--bundle \
+		--outfile=$@ \
+		--external:buffer \
+		--external:crypto \
+		--external:"tjs:*" \
+		$(ESBUILD_PARAMS_MINIFY) \
+		$(ESBUILD_PARAMS_COMMON)
 
 stdlib: $(addprefix src/bundles/c/stdlib/, $(patsubst %.js, %.c, $(notdir $(STDLIB_MODULES))))
+extras: $(addprefix src/bundles/c/extras/, $(patsubst %.js, %.c, $(notdir $(EXTRAS_MODULES))))
 
-js: core stdlib
+js: core stdlib extras
 
 install: $(TJS)
 	cmake --build $(BUILD_DIR) --target install
@@ -168,10 +180,11 @@ format:
 
 test:
 	./$(BUILD_DIR)/tjs test tests/
+	if [ -d "tests/extras" ]; then ./$(BUILD_DIR)/tjs test tests/extras/; fi
 
 test-advanced:
 	cd tests/advanced && npm install
 	./$(BUILD_DIR)/tjs test tests/advanced/
 
-.PRECIOUS: src/bundles/js/core/%.js src/bundles/js/stdlib/%.js
-.PHONY: all js debug install clean distclean format test test-advanced core stdlib $(TJS)
+.PRECIOUS: src/bundles/js/core/%.js src/bundles/js/stdlib/%.js src/bundles/js/extras/%.js
+.PHONY: all js debug install clean distclean format test test-advanced core stdlib extras $(TJS)

@@ -1,3 +1,18 @@
+> [!NOTE]  
+> This is a fork of [txiki](https://github.com/saghul/txiki.js) to support features which are waiting for integration or that will not be intregrated at any point.
+
+Most relevant differences:
+- Based on a forked version of quickjs-ng
+- Full control of the garbage collection events, with helpers to enable/disable it and callbacks.
+- The [external module system](https://github.com/KaruroChori/txiki-modules), to support the composition of packets (C/C++ & TS/JS code) to define and later build a custom runtime.
+
+Planned:
+- Integration of https://github.com/saghul/txiki.js/issues/316
+- Refactoring the namespacing as discussed in https://github.com/saghul/txiki.js/discussions/539
+- Not implementing https://github.com/saghul/txiki.js/issues/490 if it comes to the original repository
+- Many of the modules which are currently defined and heavy will be made optional during the build process of a custom distribution.
+
+----
 
 <p align="center">
     <img width="480" src="https://raw.githubusercontent.com/saghul/txiki.js/master/logo.png" />

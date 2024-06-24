@@ -9,7 +9,6 @@ import { addSignalListener, removeSignalListener } from './signal.js';
 import { connect, listen } from './sockets.js';
 import { createStdin, createStdout, createStderr } from './stdio.js';
 
-
 // The "tjs" global.
 //
 
@@ -242,6 +241,27 @@ Object.defineProperty(tjs, 'gc', {
 
             return _gc_state.threshold;
         },
+
+        /**
+         * @param {boolean} value
+         */
+        set fixThreshold(value) {
+            core._gc.fixThreshold(value);
+        },
+
+        /**
+         * @param {()=>boolean} v If returning true the GC event will take place, otherwise it is skipped.
+         */
+        set onBefore(v) {
+            core._gc.setBeforeCallback(v);
+        },
+
+        /**
+         * @param {()=>void} v
+         */
+        set onAfter(v) {
+            core._gc.setAfterCallback(v);
+        }       
     }
 });
 
