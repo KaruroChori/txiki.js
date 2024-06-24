@@ -11,6 +11,7 @@ Planned:
 - Refactoring the namespacing as discussed in https://github.com/saghul/txiki.js/discussions/539
 - Not implementing https://github.com/saghul/txiki.js/issues/490 if it comes to the original repository
 - Many of the modules which are currently defined and heavy will be made optional during the build process of a custom distribution.
+- Semantic versioning, to simplify version handling for the external modules.
 
 ----
 
