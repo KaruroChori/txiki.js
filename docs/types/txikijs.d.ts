@@ -115,7 +115,7 @@ declare global {
         /**
         * Management for the garbage collection.
         */
-        interface gc {
+        const gc :{
             /**
              * Force garbage collection now.
              */
