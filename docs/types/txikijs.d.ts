@@ -100,6 +100,11 @@ declare global {
         * Get system uptime.
         */
         const uptime: number;
+
+        const paths: Readonly<{
+            TMP: string;
+            HOME: string;
+        }>
     }
 
     /**
@@ -155,8 +160,34 @@ declare global {
         function prompt(msg: string, def?: string): Promise<string | null>;
     }
 
+    /**
+     * 
+     */
     namespace process{
+        /**
+        * Array with the arguments passed to the binary.
+        */
+        const args: string[];
+    }
 
+    /**
+     * 
+     */
+    namespace fs{
+
+        /**
+         * 
+         */
+        namespace file{
+
+        }
+
+        /**
+         * 
+         */
+        namespace dir{
+
+        }
     }
 
     /**
@@ -187,11 +218,6 @@ declare global {
             */
             write(buf: Uint8Array): Promise<number>;
         }
-
-        /**
-        * Array with the arguments passed to the binary.
-        */
-        const args: string[];
 
         type Signal = 'SIGHUP' | 'SIGINT' | 'SIGQUIT' | 'SIGILL' | 'SIGTRAP'
             | 'SIGABRT' | 'SIGBUS' | 'SIGFPE' | 'SIGKILL' | 'SIGUSR1' | 'SIGSEGV'
@@ -777,16 +803,6 @@ declare global {
         * @param handler Function to be called when an event occurs.
         */
         function watch(path: string, handler: WatchEventHandler): FileWatcher;
-
-        /**
-        * Returns the current user's home directory.
-        */
-        function homedir(): string;
-
-        /**
-        * Returns the temporary directory.
-        */
-        function tmpdir(): string;
 
         /**
         * Gets the system load average.
