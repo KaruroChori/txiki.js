@@ -5,38 +5,137 @@
  */
 
 declare global {
+
+    /**
+     * Platform information exposed.
+     */
+    namespace platform {
+        /**
+        * Versions of all included libraries and txiki.js itself.
+        */
+        const versions: Readonly<{
+            quickjs: string;
+            tjs: string;
+            uv: string;
+            curl: string;
+            wasm3: string;
+            sqlite3: string;
+        }>;
+
+        /**
+        * Returns the current system hostname.
+        */
+        const hostname: Readonly<string>;
+
+        /**
+        * String representation of the current platform.
+        */
+        const type: 'linux' | 'darwin' | 'windows';
+
+        interface CpuTimes {
+            user: number;
+            nice: number;
+            sys: number;
+            idle: number;
+            irq: number;
+        }
+
+        interface CpuInfo {
+            model: string;
+            speed: number;
+            times: CpuTimes;
+        }
+
+        /**
+        * Gets information about the CPUs in the system.
+        */
+        const cpu: readonly CpuInfo[];
+
+        interface NetworkInterface {
+            name: string;
+            address: string;
+            mac: string;
+            scopeId?: number;
+            netmask: string;
+            internal: boolean;
+        }
+
+        /**
+        * Gets information about the network interfaces in the system.
+        */
+        const networkInterfaces: readonly NetworkInterface[];
+
+
+        interface UserInfo {
+            username: string;
+            uid: number;
+            gid: number;
+            shell: string | null;
+            homedir: string | null;
+        }
+
+        /**
+        * Retrieves user information from the password database.
+        */
+        const user: Readonly<UserInfo>;
+
+        /**
+        * Returns an estimate of the default amount of parallelism a program should use.
+        */
+        const threads: Readonly<number>;
+
+        interface Uname {
+            sysname: string;
+            release: string;
+            version: string;
+            machine: string;
+        }
+
+        /**
+        * Obtain system information.
+        */
+        const uname: Readonly<Uname>;
+
+        /**
+        * Get system uptime.
+        */
+        const uptime: number;
+    }
+
     /**
     * The main global where txiki.js APIs are exposed.
     */
     namespace tjs {
+ 
         /**
-        * Implemented by entities from which data can be read.
+        * Management for the garbage collection.
         */
-        interface Reader {
+        interface gc {
             /**
-            * Reads data into the given buffer. Resolves to the number of read bytes or null for EOF.
-            *
-            * @param buf Buffer to read data into.
-            */
-            read(buf: Uint8Array): Promise<number | null>;
+             * Force garbage collection now.
+             */
+            run: () => void;
+
+            /**
+             * Enables / disables automatic garbage collection.
+             */
+            enabled: boolean;
+
+            /**
+             * Sets / gets the threshold (in bytes) for automatic garbage collection.
+             */
+            threshold: number;
+
+            fixThreshold: boolean;
+            onBefore: () => boolean;
+            onAfter: () => void;
         }
 
-        /**
-        * Implemented by entities to which data can be written.
-        */
-        interface Writer {
-            /**
-            * Writes the given data buffer. Resolves to the number of written bytes.
-            *
-            * @param buf Buffer of data to write.
-            */
-            write(buf: Uint8Array): Promise<number>;
-        }
 
         /**
         * Alerts the user about something.
         *
-        * @param masg The message that will be displayed.
+        * @param msg The message that will be displayed.
         */
         function alert(msg: string): Promise<void>;
 
@@ -54,6 +153,40 @@ declare global {
         * @param def Default value in case nothing was entered.
         */
         function prompt(msg: string, def?: string): Promise<string | null>;
+    }
+
+    namespace process{
+
+    }
+
+    /**
+     * Namespace for all posix related functions and constants
+     */
+
+    namespace posix {
+       /**
+        * Implemented by entities from which data can be read.
+        */
+       interface Reader {
+        /**
+        * Reads data into the given buffer. Resolves to the number of read bytes or null for EOF.
+        *
+        * @param buf Buffer to read data into.
+        */
+            read(buf: Uint8Array): Promise<number | null>;
+        }
+
+        /**
+        * Implemented by entities to which data can be written.
+        */
+        interface Writer {
+            /**
+            * Writes the given data buffer. Resolves to the number of written bytes.
+            *
+            * @param buf Buffer of data to write.
+            */
+            write(buf: Uint8Array): Promise<number>;
+        }
 
         /**
         * Array with the arguments passed to the binary.
@@ -105,46 +238,6 @@ declare global {
         function kill(pid: number, sig?: Signal): void;
 
         /**
-        * Management for the garbage collection.
-        */
-        interface gc {
-            /**
-             * Force garbage collection now.
-             */
-            run: () => void;
-
-            /**
-             * Enables / disables automatic garbage collection.
-             */
-            enabled: boolean;
-
-            /**
-             * Sets / gets the threshold (in bytes) for automatic garbage collection.
-             */
-            threshold: number;
-
-            fixThreshold: boolean;
-            onBefore: () => boolean;
-            onAfter: () => void;
-        }
-
-        /**
-        * The txiki.js version.
-        */
-        const version: string;
-
-        /**
-        * Versions of all included libraries and txiki.js itself.
-        */
-        const versions: {
-            quickjs: string;
-            tjs: string;
-            uv: string;
-            curl: string;
-            wasm3: string;
-        };
-
-        /**
         * Full path to the txiki.js running executable.
         */
         const exepath: string;
@@ -160,16 +253,6 @@ declare global {
         * System environment variables.
         */
         const env: Environment;
-
-        /**
-        * Returns the current system hostname.
-        */
-        function gethostname(): string;
-
-        /**
-        * String representation of the current platform.
-        */
-        const platform: 'linux' | 'darwin' | 'windows';
 
         /**
         * Exit the current running program.
@@ -341,7 +424,7 @@ declare global {
             /**
              * Returns the string representing the given error number.
              *
-             * @param code Error number.
+             * @param errno Error number.
              */
             strerror(errno: number): string;
         }
@@ -695,23 +778,6 @@ declare global {
         */
         function watch(path: string, handler: WatchEventHandler): FileWatcher;
 
-        interface Uname {
-            sysname: string;
-            release: string;
-            version: string;
-            machine: string;
-        }
-
-        /**
-        * Obtain system information.
-        */
-        function uname(): Uname;
-
-        /**
-        * Get system uptime.
-        */
-        function uptime(): number;
-
         /**
         * Returns the current user's home directory.
         */
@@ -727,39 +793,6 @@ declare global {
         * See [getloadavg(3)](https://man7.org/linux/man-pages/man3/getloadavg.3.html)
         */
         function loadavg(): [number, number, number];
-
-        interface CpuTimes {
-            user: number;
-            nice: number;
-            sys: number;
-            idle: number;
-            irq: number;
-        }
-
-        interface CpuInfo {
-            model: string;
-            speed: number;
-            times: CpuTimes;
-        }
-
-        /**
-        * Gets information about the CPUs in the system.
-        */
-        function cpuInfo(): CpuInfo[];
-
-        interface NetworkInterface {
-            name: string;
-            address: string;
-            mac: string;
-            scopeId?: number;
-            netmask: string;
-            internal: boolean;
-        }
-
-        /**
-        * Gets information about the network interfaces in the system.
-        */
-        function networkInterfaces(): NetworkInterface[];
 
         type StdioType = 'tty' | 'pipe' | 'file';
 
@@ -937,24 +970,6 @@ declare global {
         * Parent process ID.
         */
         const ppid: number;
-
-        interface UserInfo {
-            username: string;
-            uid: number;
-            gid: number;
-            shell: string | null;
-            homedir: string | null;
-        }
-
-        /**
-        * Retrieves user information from the password database.
-        */
-        function userInfo(): UserInfo;
-
-        /**
-        * Returns an estimate of the default amount of parallelism a program should use.
-        */
-        function availableParallelism(): number;
 
         /**
         * provides access to most of the POSIX socket API.
